@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Tools</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    min-height: 100vh;
+    padding: 40px 24px;
+  }
+
+  header {
+    max-width: 900px;
+    margin: 0 auto 36px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  .subtitle { font-size: 13px; color: #999; }
+
+  /* Toolbar */
+  .toolbar {
+    max-width: 900px;
+    margin: 0 auto 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .toolbar-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .toolbar-btn:hover { border-color: #bbb; color: #222; background: #fafafa; }
+  .toolbar-btn.danger:hover { border-color: #ffaaaa; color: #cc3300; background: #fff5f5; }
+
+  .search-wrap { max-width: 900px; margin: 0 auto 28px; }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 10px 16px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+    color: #1a1a1a;
+  }
+  input[type="text"]:focus { border-color: #aaa; }
+  input[type="text"]::placeholder { color: #bbb; }
+
+  .tabs {
+    max-width: 900px;
+    margin: 0 auto 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #666;
+    user-select: none;
+  }
+  .tab:hover { border-color: #bbb; color: #333; }
+  .tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+  .grid {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    background: #fff;
+    border: 1.5px solid #ebebeb;
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all 0.18s;
+    cursor: pointer;
+    position: relative;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .card:hover {
+    border-color: #ccc;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+  }
+
+  .card:active { transform: translateY(0); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    background: #f5f5f3;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card-icon img { width: 26px; height: 26px; object-fit: contain; }
+  .card-icon .emoji-icon { font-size: 20px; line-height: 1; }
+  .card-name { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
+  .card-desc { font-size: 12px; color: #999; line-height: 1.5; }
+
+  .card-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #f5f5f3;
+    color: #888;
+    display: inline-block;
+    align-self: flex-start;
+    margin-top: auto;
+  }
+
+  .edit-btn {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transition: all 0.2s;
+    z-index: 100;
+  }
+  .edit-btn:hover { background: #333; transform: translateY(-1px); }
+
+  .card-add {
+    border: 1.5px dashed #ddd;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #bbb;
+    font-size: 13px;
+    min-height: 120px;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-decoration: none;
+  }
+  .card-add:hover { border-color: #aaa; color: #888; background: #fafafa; transform: none; box-shadow: none; }
+  .card-add span { font-size: 24px; }
+
+  .delete-btn {
+    display: none;
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #ff4444;
+    color: #fff;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .icon-edit-btn {
+    display: none;
+    position: absolute;
+    bottom: -4px; right: -4px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #555;
+    color: #fff;
+    border: none;
+    font-size: 9px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .editing .delete-btn { display: flex; }
+  .editing .icon-edit-btn { display: flex; }
+  .editing .card { border-color: #ffd0d0; }
+  .editing .card-add { display: none; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 28px;
+    width: 380px;
+    max-width: 92vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal h2 { font-size: 16px; margin-bottom: 20px; }
+
+  .modal label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+
+  .modal input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .modal input:focus { border-color: #aaa; }
+
+  .icon-preview-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .icon-preview {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: #f5f5f3;
+    border: 1.5px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .icon-preview img { width: 28px; height: 28px; object-fit: contain; }
+
+  .icon-options { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+
+  .icon-opt-btn {
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #666;
+  }
+  .icon-opt-btn:hover, .icon-opt-btn.active { border-color: #1a1a1a; background: #1a1a1a; color: #fff; }
+
+  .emoji-section { display: none; margin-top: 10px; }
+  .emoji-section.show { display: block; }
+
+  .emoji-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .emoji-pick {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+  }
+  .emoji-pick:hover { border-color: #aaa; background: #f5f5f3; transform: scale(1.1); }
+  .emoji-pick.selected { border-color: #1a1a1a; background: #f0f0f0; }
+
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .modal-btns button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-cancel { background: #f0f0f0; color: #666; }
+  .btn-cancel:hover { background: #e8e8e8; }
+  .btn-save { background: #1a1a1a; color: #fff; }
+  .btn-save:hover { background: #333; }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #bbb;
+    font-size: 14px;
+    grid-column: 1 / -1;
+  }
+
+  .icon-modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    width: 340px;
+    max-width: 92vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .icon-modal h2 { font-size: 15px; margin-bottom: 16px; }
+
+  /* Import modal */
+  .import-area {
+    margin-top: 12px;
+    border: 2px dashed #e0e0e0;
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #aaa;
+    font-size: 13px;
+  }
+  .import-area:hover { border-color: #aaa; color: #666; background: #fafafa; }
+  .import-area.dragover { border-color: #1a1a1a; background: #f5f5f3; }
+  .import-area .big { font-size: 28px; display: block; margin-bottom: 8px; }
+
+  .import-preview {
+    margin-top: 12px;
+    background: #f5f5f3;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    color: #666;
+    display: none;
+  }
+  .import-preview.show { display: block; }
+
+  .import-opts { display: flex; gap: 8px; margin-top: 12px; }
+  .import-opt {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    color: #666;
+  }
+  .import-opt:hover, .import-opt.active { border-color: #1a1a1a; background: #1a1a1a; color: #fff; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 300;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🤖 AI Tools</h1>
+  <span class="subtitle">よく使うAIツールまとめ</span>
+</header>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <button class="toolbar-btn" onclick="exportCSV()">⬇️ CSVエクスポート</button>
+  <button class="toolbar-btn" onclick="openImportModal()">⬆️ CSVインポート</button>
+</div>
+
+<div class="search-wrap">
+  <input type="text" id="searchInput" placeholder="ツール名で検索..." oninput="renderCards()">
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="grid" id="grid"></div>
+
+<button class="edit-btn" id="editBtn" onclick="toggleEdit()">✏️ 編集</button>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Add Tool Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>ツールを追加</h2>
+    <label>ツール名 *</label>
+    <input type="text" id="mName" placeholder="例：ChatGPT">
+    <label>URL *</label>
+    <input type="text" id="mUrl" placeholder="例：https://chat.openai.com" oninput="onUrlChange()">
+    <label>説明</label>
+    <input type="text" id="mDesc" placeholder="例：OpenAIのチャットAI">
+    <label>カテゴリ</label>
+    <input type="text" id="mCat" placeholder="例：チャットAI">
+    <label>アイコン</label>
+    <div class="icon-preview-wrap">
+      <div class="icon-preview" id="iconPreview">🔗</div>
+      <div class="icon-options">
+        <button class="icon-opt-btn active" id="btnAuto" onclick="setIconMode('auto')">🌐 自動</button>
+        <button class="icon-opt-btn" id="btnEmoji" onclick="setIconMode('emoji')">😊 絵文字</button>
+        <button class="icon-opt-btn" id="btnCustom" onclick="setIconMode('custom')">✏️ 入力</button>
+      </div>
+    </div>
+    <div class="emoji-section" id="emojiSection">
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <div id="customIconWrap" style="display:none; margin-top:8px;">
+      <input type="text" id="mIcon" placeholder="絵文字を入力（例：🚀）" maxlength="2" oninput="updateIconPreview()">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveCard()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Icon Change Modal -->
+<div class="modal-overlay" id="iconModal">
+  <div class="icon-modal">
+    <h2 id="iconModalTitle">アイコンを変更</h2>
+    <div class="icon-preview-wrap" style="margin-bottom:12px;">
+      <div class="icon-preview" id="iconChangePreview">🔗</div>
+      <div class="icon-options">
+        <button class="icon-opt-btn active" id="btnChangeAuto" onclick="setChangeMode('auto')">🌐 自動</button>
+        <button class="icon-opt-btn" id="btnChangeEmoji" onclick="setChangeMode('emoji')">😊 絵文字</button>
+        <button class="icon-opt-btn" id="btnChangeCustom" onclick="setChangeMode('custom')">✏️ 入力</button>
+      </div>
+    </div>
+    <div class="emoji-section" id="emojiChangeSection">
+      <div class="emoji-grid" id="emojiChangeGrid"></div>
+    </div>
+    <div id="customChangeWrap" style="display:none; margin-top:8px;">
+      <input type="text" id="changeIcon" placeholder="絵文字を入力" maxlength="2" oninput="updateChangePreview()">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeIconModal()">キャンセル</button>
+      <button class="btn-save" onclick="applyIconChange()">変更する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h2>📂 CSVインポート</h2>
+    <p style="font-size:12px;color:#999;line-height:1.6;">CSVファイルを読み込んでツールを追加できます。<br>形式：<code style="background:#f5f5f3;padding:2px 6px;border-radius:4px;">name,url,desc,cat,iconType,icon</code></p>
+
+    <div class="import-area" id="importArea" onclick="document.getElementById('fileInput').click()">
+      <span class="big">📄</span>
+      クリックまたはドラッグ＆ドロップ
+      <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="onFileSelect(event)">
+    </div>
+
+    <div class="import-preview" id="importPreview"></div>
+
+    <div class="import-opts">
+      <div class="import-opt active" id="optMerge" onclick="setImportOpt('merge')">➕ 追加（既存を残す）</div>
+      <div class="import-opt" id="optReplace" onclick="setImportOpt('replace')">🔄 上書き（全て置き換え）</div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeImportModal()">キャンセル</button>
+      <button class="btn-save" id="importBtn" onclick="doImport()" disabled style="opacity:0.4">インポート</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EMOJIS = ['🤖','🧠','💡','🔍','✨','🚀','🌐','📝','🎨','🎵','📊','💬','🔥','⚡','🌟','💎','🎯','🛠️','📱','💻','🔮','🌈','🦄','🐙','🍀','🏆','❤️','💙','🧩','📚'];
+
+const defaultTools = [
+  { id:1, name:'Claude',     url:'https://claude.ai',             desc:'Anthropicの高性能AI',    iconType:'auto', icon:'', cat:'チャットAI' },
+  { id:2, name:'ChatGPT',    url:'https://chat.openai.com',       desc:'OpenAIのチャットAI',     iconType:'auto', icon:'', cat:'チャットAI' },
+  { id:3, name:'Gemini',     url:'https://gemini.google.com',     desc:'GoogleのAI',             iconType:'auto', icon:'', cat:'チャットAI' },
+  { id:4, name:'Copilot',    url:'https://copilot.microsoft.com', desc:'MicrosoftのAI',          iconType:'auto', icon:'', cat:'チャットAI' },
+  { id:5, name:'Perplexity', url:'https://www.perplexity.ai',     desc:'AI検索エンジン',         iconType:'auto', icon:'', cat:'検索AI' },
+  { id:6, name:'Grok',       url:'https://grok.com',              desc:'xAIのチャットAI',        iconType:'auto', icon:'', cat:'チャットAI' },
+  { id:7, name:'Notion AI',  url:'https://www.notion.so',         desc:'メモ＆ドキュメントAI',   iconType:'auto', icon:'', cat:'ライティング' },
+  { id:8, name:'DeepL',      url:'https://www.deepl.com',         desc:'AI翻訳サービス',         iconType:'auto', icon:'', cat:'翻訳' },
+];
+
+let tools = JSON.parse(localStorage.getItem('ai-tools-v3') || 'null') || defaultTools;
+let editing = false;
+let nextId = Math.max(...tools.map(t => t.id), 0) + 1;
+let iconMode = 'auto';
+let changeMode = 'auto';
+let changingId = null;
+let selectedEmoji = '';
+let selectedChangeEmoji = '';
+let importOpt = 'merge';
+let parsedImport = null;
+
+function save() { localStorage.setItem('ai-tools-v3', JSON.stringify(tools)); }
+
+// =====================
+//  Toast
+// =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// =====================
+//  CSV Export
+// =====================
+function exportCSV() {
+  const header = 'name,url,desc,cat,iconType,icon';
+  const rows = tools.map(t => [
+    csvEsc(t.name), csvEsc(t.url), csvEsc(t.desc||''), csvEsc(t.cat||''), csvEsc(t.iconType||'auto'), csvEsc(t.icon||'')
+  ].join(','));
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ai_tools_backup.csv';
+  a.click();
+  showToast('✅ CSVをエクスポートしました！');
+}
+
+function csvEsc(v) {
+  v = String(v);
+  if (v.includes(',') || v.includes('"') || v.includes('\n')) return '"' + v.replace(/"/g, '""') + '"';
+  return v;
+}
+
+// =====================
+//  CSV Import
+// =====================
+function openImportModal() {
+  parsedImport = null;
+  document.getElementById('importPreview').classList.remove('show');
+  document.getElementById('importPreview').textContent = '';
+  document.getElementById('importBtn').disabled = true;
+  document.getElementById('importBtn').style.opacity = '0.4';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('importModal').classList.add('show');
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').classList.remove('show');
+}
+
+function setImportOpt(opt) {
+  importOpt = opt;
+  document.getElementById('optMerge').classList.toggle('active', opt === 'merge');
+  document.getElementById('optReplace').classList.toggle('active', opt === 'replace');
+}
+
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => parseCSV(ev.target.result);
+  reader.readAsText(file, 'UTF-8');
+}
+
+// Drag & drop
+const importArea = document.getElementById('importArea');
+importArea.addEventListener('dragover', e => { e.preventDefault(); importArea.classList.add('dragover'); });
+importArea.addEventListener('dragleave', () => importArea.classList.remove('dragover'));
+importArea.addEventListener('drop', e => {
+  e.preventDefault();
+  importArea.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) { const r = new FileReader(); r.onload = ev => parseCSV(ev.target.result); r.readAsText(file, 'UTF-8'); }
+});
+
+function parseCSV(text) {
+  // Remove BOM
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) { showToast('❌ データが見つかりません'); return; }
+
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const nameIdx = headers.indexOf('name');
+  const urlIdx  = headers.indexOf('url');
+  if (nameIdx === -1 || urlIdx === -1) { showToast('❌ name・urlの列が必要です'); return; }
+
+  const descIdx     = headers.indexOf('desc');
+  const catIdx      = headers.indexOf('cat');
+  const iconTypeIdx = headers.indexOf('icontype');
+  const iconIdx     = headers.indexOf('icon');
+
+  parsedImport = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    if (!cols[nameIdx] || !cols[urlIdx]) continue;
+    parsedImport.push({
+      id: nextId++,
+      name:     cols[nameIdx] || '',
+      url:      cols[urlIdx]  || '',
+      desc:     descIdx     >= 0 ? cols[descIdx]     || '' : '',
+      cat:      catIdx      >= 0 ? cols[catIdx]      || '' : 'その他',
+      iconType: iconTypeIdx >= 0 ? cols[iconTypeIdx] || 'auto' : 'auto',
+      icon:     iconIdx     >= 0 ? cols[iconIdx]     || '' : '',
+    });
+  }
+
+  const preview = document.getElementById('importPreview');
+  preview.textContent = `✅ ${parsedImport.length}件のツールを読み込みました`;
+  preview.classList.add('show');
+  document.getElementById('importBtn').disabled = false;
+  document.getElementById('importBtn').style.opacity = '1';
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function doImport() {
+  if (!parsedImport) return;
+  if (importOpt === 'replace') {
+    tools = parsedImport;
+  } else {
+    // merge: skip duplicates by URL
+    const existingUrls = new Set(tools.map(t => t.url));
+    const newItems = parsedImport.filter(t => !existingUrls.has(t.url));
+    tools = [...tools, ...newItems];
+    showToast(`✅ ${newItems.length}件追加しました！`);
+  }
+  if (importOpt === 'replace') showToast(`✅ ${parsedImport.length}件でデータを置き換えました！`);
+  save();
+  closeImportModal();
+  renderTabs();
+  renderCards();
+}
+
+// =====================
+//  Favicon
+// =====================
+function getFaviconUrl(url) {
+  try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`; }
+  catch { return ''; }
+}
+
+function renderIcon(tool) {
+  if (tool.iconType === 'auto') {
+    const fav = getFaviconUrl(tool.url);
+    return `<img src="${fav}" onerror="this.parentElement.innerHTML='🔗'" alt="">`;
+  }
+  return `<span class="emoji-icon">${tool.icon || '🔗'}</span>`;
+}
+
+// =====================
+//  Render
+// =====================
+function getCategories() {
+  return ['すべて', ...new Set(tools.map(t => t.cat).filter(Boolean))];
+}
+
+let activeTab = 'すべて';
+
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = getCategories().map(cat => `
+    <div class="tab ${cat === activeTab ? 'active' : ''}" onclick="setTab('${cat}')">${cat}</div>
+  `).join('');
+}
+
+function setTab(cat) { activeTab = cat; renderTabs(); renderCards(); }
+
+function renderCards() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const grid = document.getElementById('grid');
+  grid.className = 'grid' + (editing ? ' editing' : '');
+
+  let filtered = tools.filter(t => {
+    const matchTab = activeTab === 'すべて' || t.cat === activeTab;
+    const matchSearch = !query || t.name.toLowerCase().includes(query) || (t.desc||'').toLowerCase().includes(query);
+    return matchTab && matchSearch;
+  });
+
+  if (filtered.length === 0 && !editing) {
+    grid.innerHTML = '<div class="empty">ツールが見つかりません</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((t, i) => `
+    <a class="card" href="${t.url}" target="_blank" style="animation-delay:${i*0.04}s" onclick="handleClick(event)">
+      <button class="delete-btn" onclick="deleteCard(event,${t.id})">×</button>
+      <div class="card-icon" style="position:relative">
+        ${renderIcon(t)}
+        <button class="icon-edit-btn" onclick="openIconModal(event,${t.id})" title="アイコン変更">✏</button>
+      </div>
+      <div class="card-name">${t.name}</div>
+      ${t.desc ? `<div class="card-desc">${t.desc}</div>` : ''}
+      ${t.cat ? `<span class="card-tag">${t.cat}</span>` : ''}
+    </a>
+  `).join('');
+
+  if (!editing) {
+    grid.innerHTML += `<div class="card card-add" onclick="openModal()"><span>＋</span>追加する</div>`;
+  }
+}
+
+function handleClick(e) { if (editing) e.preventDefault(); }
+
+function toggleEdit() {
+  editing = !editing;
+  document.getElementById('editBtn').textContent = editing ? '✅ 完了' : '✏️ 編集';
+  renderCards();
+}
+
+function deleteCard(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  if (confirm('削除しますか？')) {
+    tools = tools.filter(t => t.id !== id);
+    save(); renderTabs(); renderCards();
+  }
+}
+
+// =====================
+//  Emoji grid
+// =====================
+function buildEmojiGrid(gridId, onSelect) {
+  document.getElementById(gridId).innerHTML = EMOJIS.map(e => `
+    <button class="emoji-pick" onclick="(${onSelect.toString()})('${e}')">${e}</button>
+  `).join('');
+}
+
+// =====================
+//  Add Modal
+// =====================
+function openModal() {
+  iconMode = 'auto'; selectedEmoji = '';
+  setIconMode('auto');
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('mName').focus();
+  buildEmojiGrid('emojiGrid', em => selectEmoji(em));
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  ['mName','mUrl','mDesc','mIcon','mCat'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('iconPreview').innerHTML = '🔗';
+}
+
+function setIconMode(mode) {
+  iconMode = mode;
+  ['Auto','Emoji','Custom'].forEach(m => {
+    document.getElementById('btn'+m).classList.toggle('active', m.toLowerCase() === mode);
+  });
+  document.getElementById('emojiSection').classList.toggle('show', mode === 'emoji');
+  document.getElementById('customIconWrap').style.display = mode === 'custom' ? 'block' : 'none';
+  updateIconPreview();
+}
+
+function onUrlChange() { if (iconMode === 'auto') updateIconPreview(); }
+
+function updateIconPreview() {
+  const p = document.getElementById('iconPreview');
+  if (iconMode === 'auto') {
+    const fav = getFaviconUrl(document.getElementById('mUrl').value);
+    p.innerHTML = fav ? `<img src="${fav}" onerror="this.parentElement.innerHTML='🔗'" alt="">` : '🔗';
+  } else if (iconMode === 'emoji') p.innerHTML = selectedEmoji || '😊';
+  else p.innerHTML = document.getElementById('mIcon').value || '🔗';
+}
+
+function selectEmoji(em) {
+  selectedEmoji = em;
+  document.querySelectorAll('#emojiGrid .emoji-pick').forEach(b => b.classList.toggle('selected', b.textContent === em));
+  updateIconPreview();
+}
+
+function saveCard() {
+  const name = document.getElementById('mName').value.trim();
+  const url  = document.getElementById('mUrl').value.trim();
+  if (!name || !url) { alert('ツール名とURLは必須です'); return; }
+  let fixedUrl = url;
+  if (!fixedUrl.startsWith('http')) fixedUrl = 'https://' + fixedUrl;
+  let icon = '';
+  if (iconMode === 'emoji') icon = selectedEmoji;
+  else if (iconMode === 'custom') icon = document.getElementById('mIcon').value.trim();
+  tools.push({ id: nextId++, name, url: fixedUrl, desc: document.getElementById('mDesc').value.trim(), cat: document.getElementById('mCat').value.trim() || 'その他', iconType: iconMode, icon });
+  save(); closeModal(); renderTabs(); renderCards();
+  showToast('✅ 追加しました！');
+}
+
+// =====================
+//  Icon Change Modal
+// =====================
+function openIconModal(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  changingId = id; changeMode = 'auto'; selectedChangeEmoji = '';
+  const tool = tools.find(t => t.id === id);
+  document.getElementById('iconModalTitle').textContent = `「${tool.name}」のアイコンを変更`;
+  setChangeMode('auto');
+  buildEmojiGrid('emojiChangeGrid', em => selectChangeEmoji(em));
+  document.getElementById('iconModal').classList.add('show');
+}
+
+function closeIconModal() { document.getElementById('iconModal').classList.remove('show'); changingId = null; }
+
+function setChangeMode(mode) {
+  changeMode = mode;
+  ['Auto','Emoji','Custom'].forEach(m => {
+    document.getElementById('btnChange'+m).classList.toggle('active', m.toLowerCase() === mode);
+  });
+  document.getElementById('emojiChangeSection').classList.toggle('show', mode === 'emoji');
+  document.getElementById('customChangeWrap').style.display = mode === 'custom' ? 'block' : 'none';
+  updateChangePreview();
+}
+
+function updateChangePreview() {
+  const p = document.getElementById('iconChangePreview');
+  const tool = tools.find(t => t.id === changingId);
+  if (!tool) return;
+  if (changeMode === 'auto') {
+    const fav = getFaviconUrl(tool.url);
+    p.innerHTML = fav ? `<img src="${fav}" onerror="this.parentElement.innerHTML='🔗'" alt="">` : '🔗';
+  } else if (changeMode === 'emoji') p.innerHTML = selectedChangeEmoji || '😊';
+  else p.innerHTML = document.getElementById('changeIcon').value || '🔗';
+}
+
+function selectChangeEmoji(em) {
+  selectedChangeEmoji = em;
+  document.querySelectorAll('#emojiChangeGrid .emoji-pick').forEach(b => b.classList.toggle('selected', b.textContent === em));
+  updateChangePreview();
+}
+
+function applyIconChange() {
+  const tool = tools.find(t => t.id === changingId);
+  if (!tool) return;
+  tool.iconType = changeMode;
+  tool.icon = changeMode === 'emoji' ? selectedChangeEmoji : changeMode === 'custom' ? document.getElementById('changeIcon').value.trim() : '';
+  save(); closeIconModal(); renderCards();
+  showToast('✅ アイコンを変更しました！');
+}
+
+// Close on overlay click
+['modal','iconModal','importModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) { if(e.target===this) { closeModal(); closeIconModal(); closeImportModal(); } });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeIconModal(); closeImportModal(); }
+});
+
+renderTabs();
+renderCards();
+</script>
+</body>
+</html>
