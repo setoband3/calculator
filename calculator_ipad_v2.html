@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CALC-X1</title>
+<style>
+/* =============================================
+   フォント定義 (システムフォント優先スタック)
+   iOS: SF Mono / Menlo
+   Android: Roboto Mono / monospace
+   ============================================= */
+:root {
+  --font-mono: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+  --font-sans: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+
+/* =============================================
+   DARK MODE (デフォルト)
+   ============================================= */
+:root, [data-theme="dark"] {
+  --bg:        #0d0d0d;
+  --panel:     #161616;
+  --border:    #2a2a2a;
+  --accent:    #00e5ff;
+  --accent2:   #ff6b35;
+  --text:      #e8e8e0;
+  --muted:     #555;
+  --btn-num:   #1c1c1c;
+  --btn-fn:    #181818;
+  --btn-op:    #1e2a2a;
+  --btn-op-text: #00e5ff;
+  --btn-eq:    #003a40;
+  --btn-eq-border: #005060;
+  --btn-eq-text: #00e5ff;
+  --btn-clear-text: #ff6b35;
+  --btn-clear-border: #2a1a10;
+  --display-bg: #0a0a0a;
+  --display-line: rgba(0,229,255,0.5);
+  --main-text: #00e5ff;
+  --main-glow: 0 0 20px rgba(0,229,255,0.35);
+  --history-color: #555;
+  --expr-color: #777;
+  --shadow: 0 40px 100px rgba(0,0,0,0.85), 0 0 60px rgba(0,229,255,0.06);
+  --bg-grad1: rgba(0,229,255,0.04);
+  --bg-grad2: rgba(255,107,53,0.04);
+  --toggle-bg: #1c1c1c;
+  --toggle-border: #2a2a2a;
+  --toggle-icon-color: #00e5ff;
+  --btn-hover: #222;
+  --btn-hover-border: #3a3a3a;
+}
+
+/* =============================================
+   LIGHT MODE (オレンジ可愛い系)
+   ============================================= */
+[data-theme="light"] {
+  --bg:        #fff8f0;
+  --panel:     #ffffff;
+  --border:    #ffe0c0;
+  --accent:    #ff6b00;
+  --accent2:   #ff9500;
+  --text:      #3d2000;
+  --muted:     #c8956a;
+  --btn-num:   #fff3e5;
+  --btn-fn:    #fff8f0;
+  --btn-op:    #ffe8d0;
+  --btn-op-text: #ff6b00;
+  --btn-eq:    #ff6b00;
+  --btn-eq-border: #e05a00;
+  --btn-eq-text: #ffffff;
+  --btn-clear-text: #cc3300;
+  --btn-clear-border: #ffd0c0;
+  --display-bg: #fff8f0;
+  --display-line: rgba(255,107,0,0.6);
+  --main-text: #ff6b00;
+  --main-glow: 0 0 16px rgba(255,107,0,0.25);
+  --history-color: #c8956a;
+  --expr-color: #b07040;
+  --shadow: 0 24px 60px rgba(255,107,0,0.12), 0 4px 24px rgba(255,107,0,0.08);
+  --bg-grad1: rgba(255,107,0,0.06);
+  --bg-grad2: rgba(255,180,0,0.06);
+  --toggle-bg: #ffe0c0;
+  --toggle-border: #ffb080;
+  --toggle-icon-color: #ff6b00;
+  --btn-hover: #ffeedd;
+  --btn-hover-border: #ffb080;
+}
+
+/* =============================================
+   RESET & BASE
+   ============================================= */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  width:100%; height:100%;
+  font-family: var(--font-sans);
+  overflow:hidden;
+  touch-action:manipulation;
+  transition: background 0.4s;
+}
+
+body {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 20%, var(--bg-grad1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, var(--bg-grad2) 0%, transparent 50%);
+}
+
+/* =============================================
+   CALCULATOR SHELL
+   ============================================= */
+.calculator {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: clamp(16px, 3vw, 32px);
+  width: min(520px, 96vw);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 2vw, 16px);
+  transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
+}
+
+/* =============================================
+   HEADER
+   ============================================= */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.brand {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1.5vw, 13px);
+  color: var(--muted);
+  letter-spacing: 4px;
+  transition: color 0.4s;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Mode buttons */
+.mode-bar { display:flex; gap:6px; }
+
+.mode-btn {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1.5vw, 12px);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+  -webkit-user-select: none;
+}
+.mode-btn.active { border-color: var(--accent); color: var(--accent); }
+
+/* Theme toggle button */
+.theme-toggle {
+  width: clamp(38px, 7vw, 48px);
+  height: clamp(22px, 4vw, 28px);
+  border-radius: 50px;
+  border: 1.5px solid var(--toggle-border);
+  background: var(--toggle-bg);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.35s;
+  flex-shrink: 0;
+}
+
+.theme-toggle .knob {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(16px, 3vw, 20px);
+  height: clamp(16px, 3vw, 20px);
+  border-radius: 50%;
+  background: var(--accent);
+  left: 2px;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(8px, 1.5vw, 11px);
+}
+
+[data-theme="light"] .theme-toggle .knob {
+  left: calc(100% - clamp(18px, 3.2vw, 22px));
+}
+
+/* =============================================
+   DISPLAY
+   ============================================= */
+.display {
+  background: var(--display-bg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: clamp(14px, 2.5vw, 22px) clamp(16px, 3vw, 26px);
+  min-height: clamp(100px, 18vw, 145px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.4s, border-color 0.4s;
+}
+
+.display::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--display-line), transparent);
+  transition: background 0.4s;
+}
+
+.display-top { display:flex; flex-direction:column; gap:2px; }
+
+.display-history {
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 1.8vw, 13px);
+  color: var(--history-color);
+  text-align: right;
+  min-height: 18px;
+  transition: color 0.4s;
+}
+
+.display-expr {
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 2vw, 15px);
+  color: var(--expr-color);
+  text-align: right;
+  min-height: 18px;
+  word-break: break-all;
+  transition: color 0.4s;
+}
+
+.mem-indicator {
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1.4vw, 11px);
+  color: var(--muted);
+  min-height: 14px;
+  letter-spacing: 2px;
+  transition: color 0.4s;
+}
+.mem-indicator.active { color: var(--accent2); }
+
+.display-main {
+  font-family: var(--font-mono);
+  font-size: clamp(36px, 8vw, 58px);
+  color: var(--main-text);
+  text-align: right;
+  text-shadow: var(--main-glow);
+  letter-spacing: -1px;
+  line-height: 1;
+  word-break: break-all;
+  transition: color 0.4s, text-shadow 0.4s, font-size 0.1s;
+}
+.display-main.small  { font-size: clamp(24px, 5.5vw, 42px); }
+.display-main.xsmall { font-size: clamp(18px, 4vw, 28px); }
+
+/* =============================================
+   SCIENTIFIC PANEL
+   ============================================= */
+.sci-panel {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(6px, 1.2vw, 10px);
+  padding-bottom: clamp(10px, 2vw, 14px);
+  border-bottom: 1px solid var(--border);
+  transition: border-color 0.4s;
+}
+.sci-panel.show { display: grid; }
+
+/* =============================================
+   BUTTON GRID
+   ============================================= */
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(7px, 1.4vw, 12px);
+}
+
+.btn {
+  background: var(--btn-num);
+  border: 1px solid var(--border);
+  border-radius: clamp(10px, 2vw, 16px);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: clamp(16px, 3.5vw, 24px);
+  height: clamp(56px, 11vw, 76px);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.2s, transform 0.08s, box-shadow 0.15s, color 0.4s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity 0.3s;
+}
+
+.btn:active { transform: scale(0.93); }
+.btn:active::after { opacity: 0.07; }
+.btn:hover:not(:active) { background: var(--btn-hover); border-color: var(--btn-hover-border); }
+
+/* Operator buttons */
+.btn.op {
+  background: var(--btn-op);
+  color: var(--btn-op-text);
+  border-color: var(--border);
+  font-size: clamp(18px, 4vw, 26px);
+}
+
+/* Function buttons */
+.btn.fn {
+  font-size: clamp(11px, 2.2vw, 16px);
+  color: var(--muted);
+  background: var(--btn-fn);
+}
+
+/* Clear button */
+.btn.clear {
+  color: var(--btn-clear-text);
+  border-color: var(--btn-clear-border);
+}
+
+/* Equals button */
+.btn.eq {
+  background: var(--btn-eq);
+  color: var(--btn-eq-text);
+  border-color: var(--btn-eq-border);
+  grid-column: span 2;
+  font-size: clamp(22px, 5vw, 34px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+.btn.eq:hover:not(:active) {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.15);
+}
+.btn.eq:active { transform: scale(0.96); }
+
+.btn.zero { grid-column: span 2; }
+
+/* =============================================
+   LANDSCAPE LAYOUT (iPad横向き)
+   ============================================= */
+@media (orientation: landscape) and (min-width: 700px) {
+  .calculator {
+    width: min(720px, 92vw);
+    flex-direction: row;
+    align-items: stretch;
+    gap: clamp(12px, 2vw, 22px);
+  }
+  .left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 2vw, 14px);
+  }
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.5vw, 12px);
+  }
+  .display { min-height: clamp(120px, 22vw, 190px); }
+  .sci-panel { padding-bottom: 0; border-bottom: none; }
+  .btn { height: clamp(48px, 8.5vw, 68px); }
+}
+
+/* =============================================
+   ANIMATIONS
+   ============================================= */
+@keyframes flash {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.2; }
+}
+.flash { animation: flash 0.18s; }
+
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.slide-in { animation: slideIn 0.25s ease; }
+</style>
+</head>
+<body>
+
+<div class="calculator" id="calc">
+
+  <!-- ===== LEFT PANEL ===== -->
+  <div class="left-panel">
+
+    <div class="header">
+      <span class="brand">CALC-X1</span>
+      <div class="header-right">
+        <div class="mode-bar">
+          <button class="mode-btn active" id="modeStd" ontouchstart="setMode('std')" onclick="setMode('std')">STD</button>
+          <button class="mode-btn" id="modeSci" ontouchstart="setMode('sci')" onclick="setMode('sci')">SCI</button>
+        </div>
+        <!-- Theme toggle -->
+        <button class="theme-toggle" id="themeToggle" ontouchstart="toggleTheme()" onclick="toggleTheme()" aria-label="テーマ切替">
+          <div class="knob" id="knobIcon">🌙</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="display">
+      <div class="display-top">
+        <div class="display-history" id="history"></div>
+        <div class="display-expr" id="expr"></div>
+      </div>
+      <div class="mem-indicator" id="memIndicator"></div>
+      <div class="display-main" id="mainDisplay">0</div>
+    </div>
+
+  </div>
+
+  <!-- ===== RIGHT PANEL ===== -->
+  <div class="right-panel">
+
+    <!-- Scientific panel -->
+    <div class="sci-panel" id="sciPanel">
+      <button class="btn fn" ontouchstart="inputFn('sin(')" onclick="inputFn('sin(')">sin</button>
+      <button class="btn fn" ontouchstart="inputFn('cos(')" onclick="inputFn('cos(')">cos</button>
+      <button class="btn fn" ontouchstart="inputFn('tan(')" onclick="inputFn('tan(')">tan</button>
+      <button class="btn fn" ontouchstart="inputFn('log(')" onclick="inputFn('log(')">log</button>
+      <button class="btn fn" ontouchstart="inputFn('sqrt(')" onclick="inputFn('sqrt(')">√</button>
+      <button class="btn fn" ontouchstart="inputFn('Math.PI')" onclick="inputFn('Math.PI')">π</button>
+      <button class="btn fn" ontouchstart="inputFn('^')" onclick="inputFn('^')">xⁿ</button>
+      <button class="btn fn" ontouchstart="inputFn('ln(')" onclick="inputFn('ln(')">ln</button>
+    </div>
+
+    <div class="btn-grid">
+      <button class="btn fn" ontouchstart="memStore()"  onclick="memStore()">MS</button>
+      <button class="btn fn" ontouchstart="memRecall()" onclick="memRecall()">MR</button>
+      <button class="btn fn" ontouchstart="memClear()"  onclick="memClear()">MC</button>
+      <button class="btn fn" ontouchstart="memAdd()"    onclick="memAdd()">M+</button>
+
+      <button class="btn clear" ontouchstart="clearAll()"    onclick="clearAll()">AC</button>
+      <button class="btn fn"    ontouchstart="deleteLast()"  onclick="deleteLast()">⌫</button>
+      <button class="btn op"    ontouchstart="inputOp('%')"  onclick="inputOp('%')">%</button>
+      <button class="btn op"    ontouchstart="inputOp('/')"  onclick="inputOp('/')">÷</button>
+
+      <button class="btn" ontouchstart="inputNum('7')" onclick="inputNum('7')">7</button>
+      <button class="btn" ontouchstart="inputNum('8')" onclick="inputNum('8')">8</button>
+      <button class="btn" ontouchstart="inputNum('9')" onclick="inputNum('9')">9</button>
+      <button class="btn op" ontouchstart="inputOp('*')" onclick="inputOp('*')">×</button>
+
+      <button class="btn" ontouchstart="inputNum('4')" onclick="inputNum('4')">4</button>
+      <button class="btn" ontouchstart="inputNum('5')" onclick="inputNum('5')">5</button>
+      <button class="btn" ontouchstart="inputNum('6')" onclick="inputNum('6')">6</button>
+      <button class="btn op" ontouchstart="inputOp('-')" onclick="inputOp('-')">−</button>
+
+      <button class="btn" ontouchstart="inputNum('1')" onclick="inputNum('1')">1</button>
+      <button class="btn" ontouchstart="inputNum('2')" onclick="inputNum('2')">2</button>
+      <button class="btn" ontouchstart="inputNum('3')" onclick="inputNum('3')">3</button>
+      <button class="btn op" ontouchstart="inputOp('+')" onclick="inputOp('+')">+</button>
+
+      <button class="btn fn"   ontouchstart="toggleSign()"  onclick="toggleSign()">±</button>
+      <button class="btn zero" ontouchstart="inputNum('0')" onclick="inputNum('0')">0</button>
+      <button class="btn"      ontouchstart="inputDot()"    onclick="inputDot()">.</button>
+      <button class="btn eq"   ontouchstart="calculate()"   onclick="calculate()">=</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// =============================================
+//  State
+// =============================================
+let expr            = '';
+let result          = '0';
+let memory          = 0;
+let hasMemory       = false;
+let justCalculated  = false;
+let isDark          = true;
+
+const mainDisplay  = document.getElementById('mainDisplay');
+const exprEl       = document.getElementById('expr');
+const historyEl    = document.getElementById('history');
+const memIndicator = document.getElementById('memIndicator');
+const knobIcon     = document.getElementById('knobIcon');
+const calcEl       = document.getElementById('calc');
+
+// =============================================
+//  Theme Toggle
+// =============================================
+let lastTouch = 0;
+function guardTouch() {
+  const now = Date.now();
+  if (now - lastTouch < 300) return false;
+  lastTouch = now;
+  return true;
+}
+
+function toggleTheme() {
+  if (!guardTouch()) return;
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  knobIcon.textContent = isDark ? '🌙' : '☀️';
+}
+
+// =============================================
+//  Display
+// =============================================
+function updateDisplay() {
+  const len = (result || '0').length;
+  mainDisplay.className = 'display-main';
+  if (len > 12) mainDisplay.classList.add('xsmall');
+  else if (len > 8) mainDisplay.classList.add('small');
+  mainDisplay.textContent = result || '0';
+  exprEl.textContent = expr;
+}
+
+// =============================================
+//  Mode
+// =============================================
+function setMode(mode) {
+  if (!guardTouch()) return;
+  const sci = mode === 'sci';
+  document.getElementById('sciPanel').classList.toggle('show', sci);
+  document.getElementById('modeStd').classList.toggle('active', !sci);
+  document.getElementById('modeSci').classList.toggle('active', sci);
+}
+
+// =============================================
+//  Input
+// =============================================
+function inputNum(n) {
+  if (!guardTouch()) return;
+  if (justCalculated) { expr = ''; result = ''; justCalculated = false; }
+  if (result === '0' && n !== '.') result = n;
+  else result += n;
+  expr += n;
+  updateDisplay();
+}
+
+function inputDot() {
+  if (!guardTouch()) return;
+  if (justCalculated) { expr = '0'; result = '0.'; justCalculated = false; updateDisplay(); return; }
+  if (!result.includes('.')) { result += '.'; expr += '.'; }
+  updateDisplay();
+}
+
+function inputOp(op) {
+  if (!guardTouch()) return;
+  justCalculated = false;
+  const d = op==='*'?'×':op==='/'?'÷':op==='-'?'−':op;
+  expr   += ' ' + d + ' ';
+  result  = op;
+  updateDisplay();
+  result  = '';
+}
+
+function inputFn(fn) {
+  if (!guardTouch()) return;
+  justCalculated = false;
+  expr   += fn;
+  result  = fn;
+  updateDisplay();
+  result  = '';
+}
+
+// =============================================
+//  Calculate
+// =============================================
+function calculate() {
+  if (!guardTouch()) return;
+  if (!expr) return;
+  try {
+    let e = expr
+      .replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-')
+      .replace(/\^/g,'**')
+      .replace(/ln\(/g,'Math.log(')
+      .replace(/log\(/g,'Math.log10(')
+      .replace(/sin\(/g,'Math.sin(')
+      .replace(/cos\(/g,'Math.cos(')
+      .replace(/tan\(/g,'Math.tan(')
+      .replace(/sqrt\(/g,'Math.sqrt(')
+      .replace(/π/g,'Math.PI');
+
+    const res = Function('"use strict"; return (' + e + ')')();
+    if (!isFinite(res)) throw new Error();
+
+    historyEl.textContent = expr + ' =';
+    result = String(parseFloat(res.toPrecision(12)));
+    expr   = '';
+    justCalculated = true;
+    mainDisplay.classList.add('flash');
+    setTimeout(() => mainDisplay.classList.remove('flash'), 180);
+  } catch(err) {
+    result = 'ERROR';
+    expr   = '';
+    justCalculated = true;
+  }
+  updateDisplay();
+}
+
+// =============================================
+//  Utility
+// =============================================
+function clearAll() {
+  if (!guardTouch()) return;
+  expr = ''; result = '0'; justCalculated = false;
+  historyEl.textContent = '';
+  updateDisplay();
+}
+
+function deleteLast() {
+  if (!guardTouch()) return;
+  if (justCalculated) { clearAll(); return; }
+  result = result.slice(0, -1) || '0';
+  expr   = expr.slice(0, -1);
+  updateDisplay();
+}
+
+function toggleSign() {
+  if (!guardTouch()) return;
+  if (result && result !== '0') {
+    result = result.startsWith('-') ? result.slice(1) : '-' + result;
+    updateDisplay();
+  }
+}
+
+// Memory
+function memStore()  { if(!guardTouch())return; memory=parseFloat(result)||0; hasMemory=true; memIndicator.textContent='M: '+memory; memIndicator.className='mem-indicator active'; }
+function memRecall() { if(!guardTouch())return; if(hasMemory){result=String(memory);expr+=String(memory);updateDisplay();} }
+function memClear()  { if(!guardTouch())return; memory=0; hasMemory=false; memIndicator.textContent=''; memIndicator.className='mem-indicator'; }
+function memAdd()    { if(!guardTouch())return; memory+=parseFloat(result)||0; hasMemory=true; memIndicator.textContent='M: '+memory; memIndicator.className='mem-indicator active'; }
+
+// =============================================
+//  Keyboard support
+// =============================================
+document.addEventListener('keydown', e => {
+  if (e.key>='0'&&e.key<='9')       inputNum(e.key);
+  else if (e.key==='.')              inputDot();
+  else if (e.key==='+')             inputOp('+');
+  else if (e.key==='-')             inputOp('-');
+  else if (e.key==='*')             inputOp('*');
+  else if (e.key==='/'){e.preventDefault();inputOp('/');}
+  else if (e.key==='Enter'||e.key==='=') calculate();
+  else if (e.key==='Backspace')     deleteLast();
+  else if (e.key==='Escape')        clearAll();
+});
+
+// Prevent scroll/zoom on touch
+document.addEventListener('touchmove', e => e.preventDefault(), { passive:false });
+</script>
+</body>
+</html>
